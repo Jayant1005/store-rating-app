@@ -53,4 +53,17 @@ router.post("/:id/ratings", auth, async (req, res) => {
   }
 });
 
+router.get("/:id/products", async (req, res) => {
+  try {
+    const productsResult = await db.query(
+      "SELECT name, price FROM products WHERE store_id = $1 ORDER BY name",
+      [req.params.id]
+    );
+    res.json(productsResult.rows);
+  } catch (error) {
+    console.error(error.message);
+    res.status(500).send("Server Error");
+  }
+});
+
 module.exports = router;
