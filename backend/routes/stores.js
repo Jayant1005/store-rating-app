@@ -6,21 +6,35 @@ const db = require("../db");
 const auth = require("../middleware/auth");
 
 router.get("/", auth, async (req, res) => {
-  try {
-    const storesResult = await db.query(
-      `SELECT
-        s.id,
-        s.name,
-        s.address,
-        COALESCE(AVG(r.rating), 0) as "overallRating",
-        (SELECT rating FROM ratings WHERE store_id = s.id AND user_id = $1) as "userRating"
-       FROM stores s
-       LEFT JOIN ratings r ON s.id = r.store_id
-       GROUP BY s.id
-       ORDER BY s.name`,
-      [req.user.id]
-    );
+  const userId = req.user.id;
+  const { name, address } = req.query;
 
+  let query = `
+    SELECT
+      s.id,
+      s.name,
+      s.address,
+      COALESCE(AVG(r.rating), 0) as "overallRating",
+      (SELECT rating FROM ratings WHERE store_id = s.id AND user_id = $1) as "userRating"
+    FROM stores s
+    LEFT JOIN ratings r ON s.id = r.store_id
+    WHERE 1=1
+  `;
+  const params = [userId];
+
+  if (name) {
+    params.push(`%${name}%`);
+    query += ` AND s.name ILIKE $${params.length}`;
+  }
+  if (address) {
+    params.push(`%${address}%`);
+    query += ` AND s.address ILIKE $${params.length}`;
+  }
+
+  query += " GROUP BY s.id ORDER BY s.name";
+
+  try {
+    const storesResult = await db.query(query, params);
     res.json(storesResult.rows);
   } catch (error) {
     console.error(error.message);
@@ -56,7 +70,7 @@ router.post("/:id/ratings", auth, async (req, res) => {
 router.get("/:id/products", async (req, res) => {
   try {
     const productsResult = await db.query(
-      "SELECT name, price FROM products WHERE store_id = $1 ORDER BY name",
+      "SELECT id, name, price FROM products WHERE store_id = $1 ORDER BY name",
       [req.params.id]
     );
     res.json(productsResult.rows);

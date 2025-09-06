@@ -65,4 +65,61 @@ router.post("/", [auth, owner], async (req, res) => {
   }
 });
 
+router.delete("/:id", [auth, owner], async (req, res) => {
+  try {
+    const productId = req.params.id;
+    const ownerId = req.user.id;
+
+    const productCheck = await db.query(
+      `SELECT p.id FROM products p JOIN stores s ON p.store_id = s.id
+       WHERE p.id = $1 AND s.owner_id = $2`,
+      [productId, ownerId]
+    );
+
+    if (productCheck.rows.length === 0) {
+      return res.status(403).json({
+        message:
+          "Forbidden: You do not have permission to delete this product.",
+      });
+    }
+
+    await db.query("DELETE FROM products WHERE id = $1", [productId]);
+
+    res.json({ message: "Product deleted successfully." });
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).send("Server Error");
+  }
+});
+
+router.put("/:id", [auth, owner], async (req, res) => {
+  try {
+    const productId = req.params.id;
+    const ownerId = req.user.id;
+    const { name, price } = req.body;
+
+    const productCheck = await db.query(
+      `SELECT p.id FROM products p JOIN stores s ON p.store_id = s.id
+       WHERE p.id = $1 AND s.owner_id = $2`,
+      [productId, ownerId]
+    );
+
+    if (productCheck.rows.length === 0) {
+      return res.status(403).json({
+        message: "Forbidden: You do not have permission to edit this product.",
+      });
+    }
+
+    const updatedProduct = await db.query(
+      "UPDATE products SET name = $1, price = $2 WHERE id = $3 RETURNING *",
+      [name, price, productId]
+    );
+
+    res.json(updatedProduct.rows[0]);
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).send("Server Error");
+  }
+});
+
 module.exports = router;
