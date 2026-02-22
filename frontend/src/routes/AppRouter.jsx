@@ -28,11 +28,11 @@ const AppRouter = () => {
                     <Route path="/" element={<Home />} />
                     <Route path="/login" element={<Login />} />
                     <Route path="/register" element={<Register />} />
-                    <Route path="/store/:id" element={<StoreDetails />} />
+                    <Route path="/store/:storeId" element={<StoreDetails />} />
                 </Route>
 
                 {/* Admin Dashboard Routes - Protected */}
-                <Route element={<ProtectedRoute allowedRoles={["System Administrator"]} />}>
+                <Route element={<ProtectedRoute allowedRoles={["admin"]} />}>
                     <Route element={<DashboardLayout />}>
                         <Route path="/admin/dashboard" element={<AdminDashboard />} />
                         <Route path="/admin/users" element={<div>User Management Placeholder</div>} />
@@ -41,7 +41,7 @@ const AppRouter = () => {
                 </Route>
 
                 {/* Owner Dashboard Routes - Protected */}
-                <Route element={<ProtectedRoute allowedRoles={["Store Owner"]} />}>
+                <Route element={<ProtectedRoute allowedRoles={["owner"]} />}>
                     <Route element={<DashboardLayout />}>
                         <Route path="/owner/dashboard" element={<OwnerDashboard />} />
                         <Route path="/owner/products" element={<div>Manage Products Placeholder</div>} />
