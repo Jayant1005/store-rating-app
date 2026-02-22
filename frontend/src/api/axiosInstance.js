@@ -1,18 +1,14 @@
-import axios from "axios";
+import axios from 'axios';
 
-const axiosInstance = axios.create({
-    baseURL: "http://localhost:5001/api", // Base path so we don't have to keep appending it
-    headers: {
-        "Content-Type": "application/json",
-    },
+const api = axios.create({
+    baseURL: import.meta.env.VITE_API_URL || process.env.REACT_APP_API_URL || '/api',
 });
 
-// Interceptor to attach token automatically to all requests
-axiosInstance.interceptors.request.use(
+api.interceptors.request.use(
     (config) => {
-        const token = localStorage.getItem("token");
+        const token = localStorage.getItem('token');
         if (token) {
-            config.headers["x-auth-token"] = token;
+            config.headers.Authorization = `Bearer ${token}`;
         }
         return config;
     },
@@ -21,16 +17,17 @@ axiosInstance.interceptors.request.use(
     }
 );
 
-// Optional: Interceptor to handle global 401s (e.g. log out user if token is expired)
-axiosInstance.interceptors.response.use(
-    (response) => response,
+api.interceptors.response.use(
+    (response) => {
+        return response;
+    },
     (error) => {
-        if (error.response && error.response.status === 401) {
-            // localStorage.removeItem("token");
-            // window.location.href = "/login"; // Force redirect if completely unauthorized
+        if (error.response && (error.response.status === 401 || error.response.status === 403)) {
+            localStorage.removeItem('token');
+            window.location.href = '/login';
         }
         return Promise.reject(error);
     }
 );
 
-export default axiosInstance;
+export default api;

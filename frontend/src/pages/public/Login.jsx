@@ -1,9 +1,8 @@
 import React, { useState } from "react";
-import { Box, Button, TextField, Typography, Container, Paper, CircularProgress } from "@mui/material";
+import { Box, Button, TextField, Typography, Container, Paper, CircularProgress, Alert } from "@mui/material";
 import { useAuth } from "../../context/AuthContext";
 import { useNavigate } from "react-router-dom";
 import axiosInstance from "../../api/axiosInstance";
-import endpoints from "../../api/endpoints";
 
 const Login = () => {
     const { login } = useAuth();
@@ -17,13 +16,20 @@ const Login = () => {
         setError("");
         setLoading(true);
         try {
-            const res = await axiosInstance.post(endpoints.auth.login, formData);
-            login(res.data.user, res.data.token);
+            const res = await axiosInstance.post('/auth/login', formData);
+            const { token, user } = res.data;
 
-            // Route based on role
-            if (res.data.user.role === "System Administrator") navigate("/admin/dashboard");
-            else if (res.data.user.role === "Store Owner") navigate("/owner/dashboard");
-            else navigate("/");
+            // Call the global login function
+            login(token, user);
+
+            // Redirect based on role
+            if (user.role === "owner") {
+                navigate("/owner/dashboard");
+            } else if (user.role === "admin") {
+                navigate("/admin/dashboard");
+            } else {
+                navigate("/");
+            }
         } catch (err) {
             setError(err.response?.data?.message || "Invalid credentials");
         } finally {
@@ -38,6 +44,8 @@ const Login = () => {
                     Welcome Back
                 </Typography>
                 <Box component="form" onSubmit={handleSubmit} sx={{ mt: 2 }}>
+                    {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
+
                     <TextField
                         fullWidth
                         label="Email"
@@ -58,7 +66,6 @@ const Login = () => {
                         value={formData.password}
                         onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                     />
-                    {error && <Typography color="error" variant="body2" sx={{ mt: 1 }}>{error}</Typography>}
 
                     <Button
                         type="submit"
