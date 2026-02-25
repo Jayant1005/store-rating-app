@@ -9,15 +9,17 @@ import Home from "../pages/public/Home";
 import Login from "../pages/public/Login";
 import Register from "../pages/public/Register";
 import StoreDetails from "../pages/public/StoreDetails";
+import SearchResults from "../pages/public/SearchResults";
+import Profile from "../pages/public/Profile";
 
 // Admin Pages
 import AdminDashboard from "../pages/admin/AdminDashboard";
-// import UserManagement from "../pages/admin/UserManagement";
-// import StoreApprovals from "../pages/admin/StoreApprovals";
+import UserManagement from "../pages/admin/UserManagement";
+import StoreApprovals from "../pages/admin/StoreApprovals";
 
 // Owner Pages
 import OwnerDashboard from "../pages/owner/OwnerDashboard";
-// import ManageProducts from "../pages/owner/ManageProducts";
+import ManageProducts from "../pages/owner/ManageProducts";
 
 const AppRouter = () => {
     return (
@@ -28,15 +30,21 @@ const AppRouter = () => {
                     <Route path="/" element={<Home />} />
                     <Route path="/login" element={<Login />} />
                     <Route path="/register" element={<Register />} />
-                    <Route path="/store/:storeId" element={<StoreDetails />} />
+                    <Route path="/store/:id" element={<StoreDetails />} />
+                    <Route path="/search" element={<SearchResults />} />
+                    <Route path="/profile" element={
+                        <ProtectedRoute allowedRoles={["normal", "owner", "admin"]}>
+                            <Profile />
+                        </ProtectedRoute>
+                    } />
                 </Route>
 
                 {/* Admin Dashboard Routes - Protected */}
                 <Route element={<ProtectedRoute allowedRoles={["admin"]} />}>
                     <Route element={<DashboardLayout />}>
                         <Route path="/admin/dashboard" element={<AdminDashboard />} />
-                        <Route path="/admin/users" element={<div>User Management Placeholder</div>} />
-                        <Route path="/admin/stores" element={<div>Store Management Placeholder</div>} />
+                        <Route path="/admin/users" element={<UserManagement />} />
+                        <Route path="/admin/stores" element={<StoreApprovals />} />
                     </Route>
                 </Route>
 
@@ -44,7 +52,7 @@ const AppRouter = () => {
                 <Route element={<ProtectedRoute allowedRoles={["owner"]} />}>
                     <Route element={<DashboardLayout />}>
                         <Route path="/owner/dashboard" element={<OwnerDashboard />} />
-                        <Route path="/owner/products" element={<div>Manage Products Placeholder</div>} />
+                        <Route path="/owner/products" element={<ManageProducts />} />
                     </Route>
                 </Route>
 

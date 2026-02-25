@@ -175,6 +175,13 @@ const Home = () => {
                     ))}
                 </Grid>
             </Container>
+
+            {/* Footer */}
+            <Box sx={{ py: 4, mt: 8, borderTop: '1px solid', borderColor: 'divider', textAlign: 'center' }}>
+                <Typography variant="body2" color="text.secondary">
+                    &copy; 2026 VibeAestim. All rights reserved.
+                </Typography>
+            </Box>
         </Box>
     );
 };

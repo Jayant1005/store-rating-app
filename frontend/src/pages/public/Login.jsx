@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Box, Button, TextField, Typography, Container, Paper, CircularProgress, Alert } from "@mui/material";
+import { Box, Button, TextField, Typography, Container, Paper, CircularProgress, Alert, Dialog, DialogTitle, DialogContent, DialogActions } from "@mui/material";
 import { useAuth } from "../../context/AuthContext";
 import { useNavigate } from "react-router-dom";
 import axiosInstance from "../../api/axiosInstance";
@@ -10,6 +10,8 @@ const Login = () => {
     const [formData, setFormData] = useState({ email: "", password: "" });
     const [error, setError] = useState("");
     const [loading, setLoading] = useState(false);
+    const [showRoleModal, setShowRoleModal] = useState(false);
+    const [tempAuthData, setTempAuthData] = useState(null);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -19,21 +21,51 @@ const Login = () => {
             const res = await axiosInstance.post('/auth/login', formData);
             const { token, user } = res.data;
 
-            // Call the global login function
-            login(token, user);
-
-            // Redirect based on role
-            if (user.role === "owner") {
-                navigate("/owner/dashboard");
-            } else if (user.role === "admin") {
-                navigate("/admin/dashboard");
+            if (user.role === 'super-admin') {
+                setTempAuthData({ token, user });
+                setShowRoleModal(true);
             } else {
-                navigate("/");
+                // Call the global login function
+                login(token, user);
+
+                // Redirect based on role
+                if (user.role === "owner") {
+                    navigate("/owner/dashboard");
+                } else if (user.role === "admin") {
+                    navigate("/admin/dashboard");
+                } else {
+                    navigate("/");
+                }
             }
         } catch (err) {
             setError(err.response?.data?.message || "Invalid credentials");
         } finally {
             setLoading(false);
+        }
+    };
+
+    const handleImpersonate = (selectedRole) => {
+        if (!tempAuthData) return;
+
+        // Clone the user object and override the role
+        const impersonatedUser = {
+            ...tempAuthData.user,
+            role: selectedRole,
+            // Tagging the name so we remember it's impersonated in the UI
+            name: `${tempAuthData.user.name} (as ${selectedRole})`
+        };
+
+        // Complete the login flow with the spoofed user
+        login(tempAuthData.token, impersonatedUser);
+        setShowRoleModal(false);
+
+        // Redirect based on the newly selected role
+        if (selectedRole === "owner") {
+            navigate("/owner/dashboard");
+        } else if (selectedRole === "admin") {
+            navigate("/admin/dashboard");
+        } else {
+            navigate("/");
         }
     };
 
@@ -83,6 +115,28 @@ const Login = () => {
                     </Button>
                 </Box>
             </Paper>
+
+            {/* Impersonation Modal */}
+            <Dialog open={showRoleModal} onClose={() => setShowRoleModal(false)} fullWidth maxWidth="sm" PaperProps={{ sx: { bgcolor: '#1e1e1e', borderRadius: 3, border: '1px solid #333' } }}>
+                <DialogTitle sx={{ fontWeight: 'bold', borderBottom: '1px solid #333', pb: 2 }}>Super Admin Access</DialogTitle>
+                <DialogContent sx={{ pt: 3 }}>
+                    <Typography gutterBottom color="text.primary">Which dashboard would you like to impersonate today?</Typography>
+                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 3 }}>
+                        <Button variant="outlined" color="primary" onClick={() => handleImpersonate('normal')} sx={{ py: 1.5 }}>
+                            Normal User
+                        </Button>
+                        <Button variant="outlined" color="warning" onClick={() => handleImpersonate('owner')} sx={{ py: 1.5 }}>
+                            Store Owner
+                        </Button>
+                        <Button variant="outlined" color="error" onClick={() => handleImpersonate('admin')} sx={{ py: 1.5 }}>
+                            System Admin
+                        </Button>
+                    </Box>
+                </DialogContent>
+                <DialogActions sx={{ p: 3, borderTop: '1px solid #333' }}>
+                    <Button onClick={() => setShowRoleModal(false)} sx={{ color: 'text.secondary' }}>Cancel Login</Button>
+                </DialogActions>
+            </Dialog>
         </Container>
     );
 };
